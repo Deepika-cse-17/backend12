@@ -1,16 +1,33 @@
-FROM golang:1.22-alpine
+# -------- BUILD STAGE --------
+FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-# Copy everything
-COPY . .
+# Install git (required for fetching modules)
+RUN apk add --no-cache git
 
-# Fix dependencies inside container
-RUN go mod tidy
+# Copy go files
+COPY go.mod go.sum ./
+
+# Download dependencies
+RUN go mod download
+
+# Copy source
+COPY . .
 
 # Build binary
 RUN go build -o server .
 
+# -------- RUN STAGE --------
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy binary from builder
+COPY --from=builder /app/server .
+
+# Expose port
 EXPOSE 8081
 
+# Run app
 CMD ["./server"]
