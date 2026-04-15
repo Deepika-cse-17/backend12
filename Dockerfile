@@ -1,11 +1,14 @@
-FROM golang:1.22
+FROM golang:1.22-alpine
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
-RUN go mod download
-
+# Copy everything
 COPY . .
+
+# Fix dependencies inside container
+RUN go mod tidy
+
+# Build binary
 RUN go build -o server .
 
 EXPOSE 8081
