@@ -3,22 +3,22 @@ FROM golang:1.22-alpine AS builder
 
 WORKDIR /app
 
-# Install git (required for fetching modules)
+# Install git (needed for go modules)
 RUN apk add --no-cache git
 
-# Copy go files
+# Copy only dependency files first (better caching)
 COPY go.mod go.sum ./
 
 # Download dependencies
 RUN go mod download
 
-# Copy source
+# Now copy the rest of the source code
 COPY . .
 
-# Build binary
-RUN go build -o server .
+# Build static binary for Alpine
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server .
 
-# -------- RUN STAGE --------
+# -------- RUNTIME STAGE --------
 FROM alpine:latest
 
 WORKDIR /app
